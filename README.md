@@ -28,7 +28,7 @@ The detailed experimental settings and other results are available on [Wiki](htt
 Crawdad contains the two trie implementations:
 
 - `crawdad::Trie` is a standard trie form that often provides the fastest queries.
-- `crawdad::MpTrie` is a minimal-prefix trie form that is memory-efficient for long strings. 
+- `crawdad::MpTrie` is a minimal-prefix trie form that is memory-efficient for long strings.
 
 ## Slack
 
