@@ -1,58 +1,31 @@
-# 🦞 Crawdad: ChaRActer-Wise Double-Array Dictionary
+# crawdad-rkyv
 
-[![Crates.io](https://img.shields.io/crates/v/crawdad)](https://crates.io/crates/crawdad)
-[![Documentation](https://docs.rs/crawdad/badge.svg)](https://docs.rs/crawdad)
-![Build Status](https://github.com/daac-tools/crawdad/actions/workflows/rust.yml/badge.svg)
-[![Slack](https://img.shields.io/badge/join-chat-brightgreen?logo=slack)](https://join.slack.com/t/daac-tools/shared_invite/zt-1pwwqbcz4-KxL95Nam9VinpPlzUpEGyA)
+[![Crates.io](https://img.shields.io/crates/v/crawdad-rkyv)](https://crates.io/crates/crawdad-rkyv)
+[![Documentation](https://docs.rs/crawdad-rkyv/badge.svg)](https://docs.rs/crawdad-rkyv)
 
-## Overview
+**Note: This is a fork of the original [daac-tools/crawdad](https://github.com/daac-tools/crawdad) created to provide serialization support via the `rkyv` framework.**
 
-Crawdad is a library of natural language dictionaries using character-wise double-array tries.
-The implementation is optimized for strings of multibyte-characters,
-and you can enjoy fast text processing on strings such as Japanese or Chinese.
+This fork adds `rkyv`'s `Archive`, `Serialize`, and `Deserialize` traits to the data structures within `crawdad`. This modification enables zero-copy deserialization, which is essential for projects requiring near-instantaneous loading of serialized data, such as [vibrato-rkyv](https://github.com/stellanomia/vibrato-rkyv).
 
-For example, on a large Japanese dictionary of IPADIC+Neologd, Crawdad has a better time-space tradeoff than other Rust libraries.
+All credit for the core implementation and functionality goes to the original authors of `crawdad`.
 
-![](./figures/neologd.svg)
+## Purpose
 
-The detailed experimental settings and other results are available on [Wiki](https://github.com/daac-tools/crawdad/wiki/Performance-Comparison).
+The primary purpose of this fork is to serve as a dependency for other `-rkyv` suffixed projects. It is published on crates.io to satisfy the dependency requirements for publishing those projects.
 
-### What can do
+## Changes
 
-- **Key-value mapping**: Crawdad stores a set of string keys with mapping arbitrary integer values.
-- **Exact match**: Crawdad supports a fast lookup for an input key.
-- **Common prefix search**: Crawdad supports fast *common prefix search* that can be used to enumerate all keys appearing in a text.
+*   Added `#[derive(Archive, Serialize, Deserialize)]` to `Trie` and other relevant structs.
+*   Implemented necessary methods on the `Archived` versions of structs to maintain functionality (e.g., `common_prefix_search` on `ArchivedTrie`).
 
-### Data structures
+## Usage
 
-Crawdad contains the two trie implementations:
+You would typically not use this crate directly. Instead, it is used as a dependency by other libraries that rely on `rkyv`-serializable versions of `crawdad`'s data structures.
 
-- `crawdad::Trie` is a standard trie form that often provides the fastest queries.
-- `crawdad::MpTrie` is a minimal-prefix trie form that is memory-efficient for long strings.
+## Original README
 
-## Slack
-
-We have a Slack workspace for developers and users to ask questions and discuss a variety of topics.
-
- * https://daac-tools.slack.com/
- * Please get an invitation from [here](https://join.slack.com/t/daac-tools/shared_invite/zt-1pwwqbcz4-KxL95Nam9VinpPlzUpEGyA).
+For information on the core functionality, please refer to the [original README file](https://github.com/daac-tools/crawdad/blob/main/README.md).
 
 ## License
 
-Licensed under either of
-
- * Apache License, Version 2.0
-   ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
-
-## Acknowledgment
-
-The initial version of this software was developed by LegalOn Technologies, Inc.,
-but not an officially supported LegalOn Technologies product.
-
-## Contribution
-
-See [the guidelines](./CONTRIBUTING.md).
+This project is licensed under the same terms as the original `crawdad` library (MIT OR Apache-2.0).

@@ -6,22 +6,24 @@ use crate::{END_CODE, END_MARKER, INVALID_IDX, MAX_VALUE, OFFSET_MASK};
 use core::cmp::Ordering;
 
 use alloc::vec::Vec;
+use rkyv::{Archive, Deserialize, Serialize};
 
 // The default parameter for free blocks to be searched in `find_base`.
 const DEFAULT_NUM_FREE_BLOCKS: u32 = 16;
 
-#[derive(Default)]
+#[derive(Default, Archive, Serialize, Deserialize)]
 struct Record {
     key: Vec<char>,
     value: u32,
 }
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq, Archive, Serialize, Deserialize)]
 struct Suffix {
     key: Vec<char>,
     value: u32,
 }
 
+#[derive(Archive, Serialize, Deserialize)]
 pub struct Builder {
     records: Vec<Record>,
     mapper: CodeMapper,

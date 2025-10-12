@@ -1,10 +1,11 @@
 use alloc::vec::Vec;
+use rkyv::{Archive, Deserialize, Serialize, rend::u32_le};
 
 use core::mem::size_of;
 
 pub const INVALID_CODE: u32 = u32::MAX;
 
-#[derive(Default, Clone, Debug, PartialEq, Eq)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Archive, Serialize, Deserialize)]
 pub struct CodeMapper {
     table: Vec<u32>,
     alphabet_size: u32,
@@ -14,7 +15,7 @@ impl CodeMapper {
     pub fn new(freqs: &[u32]) -> Self {
         let sorted = {
             let mut sorted = vec![];
-            for (c, &f) in freqs.iter().enumerate().filter(|(_, &f)| f != 0) {
+            for (c, &f) in freqs.iter().enumerate().filter(|&(_, &f)| f != 0) {
                 sorted.push((c, f));
             }
             sorted.sort_unstable_by(|(c1, f1), (c2, f2)| f2.cmp(f1).then_with(|| c1.cmp(c2)));
@@ -82,5 +83,15 @@ impl CodeMapper {
             },
             source,
         )
+    }
+}
+
+impl ArchivedCodeMapper {
+    #[inline(always)]
+    pub fn get(&self, c: char) -> Option<u32_le> {
+        self.table
+            .get(usize::try_from(u32::from(c)).unwrap())
+            .copied()
+            .filter(|&code| code != INVALID_CODE)
     }
 }

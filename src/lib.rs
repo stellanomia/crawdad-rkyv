@@ -18,7 +18,7 @@
 //! To get a value associated with an input key, use [`Trie::exact_match()`].
 //!
 //! ```
-//! use crawdad::Trie;
+//! use crawdad_rkyv::Trie;
 //!
 //! let keys = vec!["世界", "世界中", "国民"];
 //! let trie = Trie::from_keys(&keys).unwrap();
@@ -33,7 +33,7 @@
 //! use [`Trie::common_prefix_search()`] for all starting positions in the text.
 //!
 //! ```
-//! use crawdad::Trie;
+//! use crawdad_rkyv::Trie;
 //!
 //! let keys = vec!["世界", "世界中", "国民"];
 //! let trie = Trie::from_keys(&keys).unwrap();
@@ -59,7 +59,7 @@
 //! use [`Trie::serialize_to_vec()`]/[`Trie::deserialize_from_slice()`].
 //!
 //! ```
-//! use crawdad::Trie;
+//! use crawdad_rkyv::Trie;
 //!
 //! let keys = vec!["世界", "世界中", "国民"];
 //! let trie = Trie::from_keys(&keys).unwrap();
@@ -97,9 +97,10 @@ pub(crate) const END_CODE: u32 = 0;
 pub const END_MARKER: char = '\u{ffff}';
 
 pub use mptrie::MpTrie;
+use rkyv::{Archive, Deserialize, Serialize};
 pub use trie::Trie;
 
-#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Archive, Serialize, Deserialize)]
 struct Node {
     base: u32,
     check: u32,
@@ -149,5 +150,32 @@ impl Node {
             base: u32::from_le_bytes(bytes[0..4].try_into().unwrap()),
             check: u32::from_le_bytes(bytes[4..8].try_into().unwrap()),
         }
+    }
+}
+
+impl ArchivedNode {
+    #[inline(always)]
+    pub fn get_base(&self) -> u32 {
+        self.base & OFFSET_MASK
+    }
+
+    #[inline(always)]
+    pub fn get_check(&self) -> u32 {
+        self.check & OFFSET_MASK
+    }
+
+    #[inline(always)]
+    pub fn is_leaf(&self) -> bool {
+        self.base & !OFFSET_MASK != 0
+    }
+
+    #[inline(always)]
+    pub fn has_leaf(&self) -> bool {
+        self.check & !OFFSET_MASK != 0
+    }
+
+    #[inline(always)]
+    pub fn is_vacant(&self) -> bool {
+        self.base == OFFSET_MASK && self.check == OFFSET_MASK
     }
 }

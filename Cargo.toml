@@ -1,21 +1,23 @@
 [package]
-name = "crawdad"
-version = "0.4.0"
-edition = "2021"
-rust-version = "1.56.1"
-authors = ["Shunsuke Kanda <shnsk.knd@gmail.com>"]
-description = "Crawdad: ChaRActer-Wise Double-Array Dictionary"
+name = "crawdad-rkyv"
+version = "0.4.0-rkyv.1"
+edition = "2024"
+rust-version = "1.90.0"
+authors = [
+    "stellanomia <fulmlumo@gmail.com>",
+    "Shunsuke Kanda <shnsk.knd@gmail.com>",
+]
+description = "Crawdad: ChaRActer-Wise Double-Array Dictionary with rkyv support"
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/daac-tools/crawdad"
-repository = "https://github.com/daac-tools/crawdad"
+homepage = "https://github.com/stellanomia/crawdad-rkyv"
+repository = "https://github.com/stellanomia/crawdad-rkyv"
 readme = "README.md"
 keywords = ["search", "text", "double-array", "trie"]
-categories = ["text-processing", "algorithms", "data-structures", "no-std"]
+categories = ["text-processing", "algorithms", "data-structures"]
 exclude = [".*"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+rkyv = "0.8.12"
 
 [features]
 default = ["alloc"]

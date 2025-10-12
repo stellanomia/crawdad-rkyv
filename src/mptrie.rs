@@ -42,7 +42,7 @@ impl MpTrie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::MpTrie;
+    /// use crawdad_rkyv::MpTrie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = MpTrie::from_keys(keys).unwrap();
@@ -79,7 +79,7 @@ impl MpTrie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::MpTrie;
+    /// use crawdad_rkyv::MpTrie;
     ///
     /// let records = vec![("世界", 2), ("世界中", 3), ("国民", 2)];
     /// let trie = MpTrie::from_records(records).unwrap();
@@ -102,7 +102,7 @@ impl MpTrie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::MpTrie;
+    /// use crawdad_rkyv::MpTrie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = MpTrie::from_keys(&keys).unwrap();
@@ -135,7 +135,7 @@ impl MpTrie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::MpTrie;
+    /// use crawdad_rkyv::MpTrie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = MpTrie::from_keys(&keys).unwrap();
@@ -189,7 +189,7 @@ impl MpTrie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::MpTrie;
+    /// use crawdad_rkyv::MpTrie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = MpTrie::from_keys(&keys).unwrap();
@@ -242,7 +242,7 @@ impl MpTrie {
     /// at all starting positions.
     ///
     /// ```
-    /// use crawdad::MpTrie;
+    /// use crawdad_rkyv::MpTrie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = MpTrie::from_keys(&keys).unwrap();
@@ -261,7 +261,7 @@ impl MpTrie {
     ///     vec![(2, 0..2), (0, 3..5), (1, 3..6)]
     /// );
     /// ```
-    pub const fn common_prefix_search<I>(&self, haystack: I) -> CommonPrefixSearchIter<I> {
+    pub const fn common_prefix_search<I>(&self, haystack: I) -> CommonPrefixSearchIter<'_, I> {
         CommonPrefixSearchIter {
             haystack,
             haystack_pos: 0,
@@ -271,7 +271,7 @@ impl MpTrie {
     }
 
     #[inline(always)]
-    fn tail_iter(&self, tail_pos: usize) -> TailIter {
+    fn tail_iter(&self, tail_pos: usize) -> TailIter<'_> {
         let tail_len = usize::from(self.tails[tail_pos]);
         TailIter {
             trie: self,

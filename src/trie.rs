@@ -1,4 +1,5 @@
 //! A standard trie form that often provides the fastest queries.
+use crate::ArchivedNode;
 use crate::builder::Builder;
 use crate::errors::Result;
 use crate::mapper::CodeMapper;
@@ -7,10 +8,14 @@ use crate::Node;
 use crate::END_CODE;
 
 use alloc::vec::Vec;
+use rkyv::Archive;
+use rkyv::Deserialize;
+use rkyv::Serialize;
 
 use core::mem;
 
 /// A standard trie form that often provides the fastest queries.
+#[derive(Debug, Archive, Serialize, Deserialize)]
 pub struct Trie {
     pub(crate) mapper: CodeMapper,
     pub(crate) nodes: Vec<Node>,
@@ -39,7 +44,7 @@ impl Trie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::Trie;
+    /// use crawdad_rkyv::Trie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = Trie::from_keys(keys).unwrap();
@@ -73,7 +78,7 @@ impl Trie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::Trie;
+    /// use crawdad_rkyv::Trie;
     ///
     /// let records = vec![("世界", 2), ("世界中", 3), ("国民", 2)];
     /// let trie = Trie::from_records(records).unwrap();
@@ -93,7 +98,7 @@ impl Trie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::Trie;
+    /// use crawdad_rkyv::Trie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = Trie::from_keys(&keys).unwrap();
@@ -122,7 +127,7 @@ impl Trie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::Trie;
+    /// use crawdad_rkyv::Trie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = Trie::from_keys(&keys).unwrap();
@@ -158,7 +163,7 @@ impl Trie {
     /// # Examples
     ///
     /// ```
-    /// use crawdad::Trie;
+    /// use crawdad_rkyv::Trie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = Trie::from_keys(&keys).unwrap();
@@ -198,7 +203,7 @@ impl Trie {
     /// at all starting positions.
     ///
     /// ```
-    /// use crawdad::Trie;
+    /// use crawdad_rkyv::Trie;
     ///
     /// let keys = vec!["世界", "世界中", "国民"];
     /// let trie = Trie::from_keys(&keys).unwrap();
@@ -217,7 +222,7 @@ impl Trie {
     ///     vec![(2, 0..2), (0, 3..5), (1, 3..6)]
     /// );
     /// ```
-    pub const fn common_prefix_search<I>(&self, haystack: I) -> CommonPrefixSearchIter<I> {
+    pub const fn common_prefix_search<I>(&self, haystack: I) -> CommonPrefixSearchIter<'_, I> {
         CommonPrefixSearchIter {
             haystack,
             haystack_pos: 0,
@@ -326,6 +331,139 @@ where
             }
         }
         None
+    }
+}
+
+/// Iterator for common prefix search.
+pub struct ArchivedCommonPrefixSearchIter<'a, I> {
+    haystack: I,
+    haystack_pos: usize,
+    trie: &'a ArchivedTrie,
+    node_idx: u32,
+}
+
+impl<I> Iterator for ArchivedCommonPrefixSearchIter<'_, I>
+where
+    I: Iterator<Item = char>,
+{
+    type Item = (u32, usize);
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        for c in self.haystack.by_ref() {
+            let mc = self.trie.mapper.get(c)?;
+            self.node_idx = self.trie.get_child_idx(self.node_idx, mc.to_native())?;
+            self.haystack_pos += 1;
+            if self.trie.is_leaf(self.node_idx) {
+                return Some((self.trie.get_value(self.node_idx), self.haystack_pos));
+            } else if self.trie.has_leaf(self.node_idx) {
+                let leaf_idx = self.trie.get_leaf_idx(self.node_idx);
+                return Some((self.trie.get_value(leaf_idx), self.haystack_pos));
+            }
+        }
+        None
+    }
+}
+
+impl ArchivedTrie {
+    /// Returns an iterator for common prefix search.
+    ///
+    /// The iterator reports all occurrences of keys starting from an input haystack, where
+    /// an occurrence consists of its associated value and ending positoin in characters.
+    ///
+    /// # Examples
+    ///
+    /// You can find all occurrences of keys in a haystack by performing common prefix searches
+    /// at all starting positions.
+    ///
+    /// ```
+    /// use crawdad_rkyv::Trie;
+    ///
+    /// let keys = vec!["世界", "世界中", "国民"];
+    /// let trie = Trie::from_keys(&keys).unwrap();
+    ///
+    /// let haystack: Vec<char> = "国民が世界中にて".chars().collect();
+    /// let mut matches = vec![];
+    ///
+    /// for i in 0..haystack.len() {
+    ///     for (v, j) in trie.common_prefix_search(haystack[i..].iter().copied()) {
+    ///         matches.push((v, i..i + j));
+    ///     }
+    /// }
+    ///
+    /// assert_eq!(
+    ///     matches,
+    ///     vec![(2, 0..2), (0, 3..5), (1, 3..6)]
+    /// );
+    /// ```
+    pub const fn common_prefix_search<I>(&self, haystack: I) -> ArchivedCommonPrefixSearchIter<'_, I> {
+        ArchivedCommonPrefixSearchIter {
+            haystack,
+            haystack_pos: 0,
+            trie: self,
+            node_idx: 0,
+        }
+    }
+
+    #[inline(always)]
+    fn get_child_idx(&self, node_idx: u32, mc: u32) -> Option<u32> {
+        if self.is_leaf(node_idx) {
+            return None;
+        }
+        Some(self.get_base(node_idx) ^ mc)
+            .filter(|&child_idx| self.get_check(child_idx) == node_idx)
+    }
+
+    #[inline(always)]
+    fn node_ref(&self, node_idx: u32) -> &ArchivedNode {
+        &self.nodes[usize::try_from(node_idx).unwrap()]
+    }
+
+    #[inline(always)]
+    fn get_base(&self, node_idx: u32) -> u32 {
+        self.node_ref(node_idx).get_base()
+    }
+
+    #[inline(always)]
+    fn get_check(&self, node_idx: u32) -> u32 {
+        self.node_ref(node_idx).get_check()
+    }
+
+    #[inline(always)]
+    fn is_leaf(&self, node_idx: u32) -> bool {
+        self.node_ref(node_idx).is_leaf()
+    }
+
+    #[inline(always)]
+    fn has_leaf(&self, node_idx: u32) -> bool {
+        self.node_ref(node_idx).has_leaf()
+    }
+
+    #[inline(always)]
+    fn get_leaf_idx(&self, node_idx: u32) -> u32 {
+        let leaf_idx = self.get_base(node_idx) ^ END_CODE;
+        debug_assert_eq!(self.get_check(leaf_idx), node_idx);
+        leaf_idx
+    }
+
+    #[inline(always)]
+    fn get_value(&self, node_idx: u32) -> u32 {
+        debug_assert!(self.is_leaf(node_idx));
+        self.node_ref(node_idx).get_base()
+    }
+
+    /// Returns the number of reserved elements.
+    pub fn num_elems(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Returns the number of vacant elements.
+    ///
+    /// # Note
+    ///
+    /// It takes `O(num_elems)` time.
+    pub fn num_vacants(&self) -> usize {
+        self.nodes.iter().filter(|nd| nd.is_vacant()).count()
     }
 }
 
