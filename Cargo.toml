@@ -1,6 +1,8 @@
+[workspace]
+
 [package]
 name = "crawdad-rkyv"
-version = "0.4.0-rkyv.1"
+version = "0.4.0-rkyv.2"
 edition = "2024"
 rust-version = "1.90.0"
 authors = [
