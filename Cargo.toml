@@ -17,7 +17,7 @@ categories = ["text-processing", "algorithms", "data-structures"]
 exclude = [".*"]
 
 [dependencies]
-rkyv = "0.8.12"
+rkyv = "0.8.15"
 
 [features]
 default = ["alloc"]
